@@ -16,6 +16,10 @@ if __name__ == '__main__':
         req_id = sys.argv[2]
     else:
         req_id = ''
+    if len(sys.argv) > 3:
+        detail = sys.argv[3]
+    else:
+        detail = False
         
     debug = False
 
@@ -26,6 +30,7 @@ if __name__ == '__main__':
     gender_woman = 0
     est_total = 0
     age_total = 0
+    detail_result = []
     
     files = glob.glob('%s/*.png' % instance_dir)
     files2 = glob.glob('%s/*.jpg' % instance_dir)
@@ -85,6 +90,12 @@ if __name__ == '__main__':
                 gender_woman += 1
                 
             age_total += face_max['age']
+            
+            detail_info = {}
+            detail_info['path'] = f
+            detail_info['gender'] = face_max['gender']
+            detail_info['age'] = face_max['age']
+            detail_result.append(detail_info)
     
         if gender_man > gender_woman * 2:
             gender = 'man'
@@ -96,17 +107,30 @@ if __name__ == '__main__':
     if est_total > 0:
         age = str(int(age_total/est_total))
             
-        print('est_man: %s, est_woman: %s, age: %s' % (gender_man, gender_woman, age))
+        #print('est_man: %s, est_woman: %s, age: %s' % (gender_man, gender_woman, age))
     
         if os.path.exists('log') == False:
             os.makedirs('log')
         
-        with open('log/insightface_%s.txt' % req_id, 'w') as fp:
-            fp.write(instance_dir)
-            fp.write('\n')
-            fp.write(gender)
-            fp.write('\n')
-            fp.write(age)
-            fp.write('\n')
+        if detail:
+            with open('log/insightface_%s.txt' % req_id, 'w') as fp:
+                for one_info in detail_result:
+                    fp.write(one_info['path'])
+                    fp.write('\n')
+                    if one_info['gender'] == 1:
+                        fp.write('man')
+                    else:
+                        fp.write('woman')
+                    fp.write('\n')
+                    fp.write(str(one_info['age']))
+                    fp.write('\n')
+        else:
+            with open('log/insightface_%s.txt' % req_id, 'w') as fp:
+                fp.write(instance_dir)
+                fp.write('\n')
+                fp.write(gender)
+                fp.write('\n')
+                fp.write(age)
+                fp.write('\n')
     else:
         print('cannot find any image files in %s' % instance_dir)
