@@ -7,6 +7,28 @@ import insightface
 from insightface.app import FaceAnalysis
 from insightface.data import get_image as ins_get_image
 
+def get_gender_type(gender, age):
+    #print('get_gender_type() gender=%s, age=%s' % (gender, age))
+    
+    if gender == 'man' or gender == 1:
+        if age < 10:
+            #return 'child_boy'
+            return 'man'
+        else:
+            return 'man'
+    elif gender == 'woman' or gender == 0:
+        if age < 10:
+            #return 'child_girl'
+            return 'woman'
+        else:
+            return 'woman'
+    else:
+        if age < 10:
+            #return 'child'
+            return 'person'
+        else:
+            return 'person'    
+    
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         instance_dir = sys.argv[1]
@@ -17,7 +39,10 @@ if __name__ == '__main__':
     else:
         req_id = ''
     if len(sys.argv) > 3:
-        detail = sys.argv[3]
+        if sys.argv[3] == 'True':
+            detail = True
+        else:
+            detail = False
     else:
         detail = False
         
@@ -32,21 +57,21 @@ if __name__ == '__main__':
     age_total = 0
     detail_result = []
     
-    files = glob.glob('%s/*.png' % instance_dir)
-    files2 = glob.glob('%s/*.jpg' % instance_dir)
-    files.extend(files2)
+    files = glob.glob('%s/*' % instance_dir)
     
     for f in files:
         #f = '/media/dj/play/project/test/images/aaa.jpg'
         if os.path.isfile(f):
             img = cv2.imread(f, cv2.IMREAD_COLOR)
+            
+            if img is None:
+                continue
         
             faces = app.get(img)
             if len(faces) == 0:
+                print('cannot find a face : %s' % f)
                 continue
             
-            rimg = app.draw_on(img, faces)
-        
             est_total += 1
             max_area = 0
             max_index = 0
@@ -75,6 +100,8 @@ if __name__ == '__main__':
                 print(face_max['gender'])
                 print(face_max['landmark_2d_106'])
                 #print(face_max['landmark_3d_68'])
+                
+                rimg = app.draw_on(img, faces)
                 
                 for x, y in face_max['landmark_2d_106']:
                 #for x, y, z in face_max['landmark_3d_68']:
@@ -105,7 +132,8 @@ if __name__ == '__main__':
             gender = 'person'
     
     if est_total > 0:
-        age = str(int(age_total/est_total))
+        age_int = int(age_total/est_total)
+        age = str(age_int)
             
         #print('est_man: %s, est_woman: %s, age: %s' % (gender_man, gender_woman, age))
     
@@ -117,18 +145,19 @@ if __name__ == '__main__':
                 for one_info in detail_result:
                     fp.write(one_info['path'])
                     fp.write('\n')
-                    if one_info['gender'] == 1:
-                        fp.write('man')
-                    else:
-                        fp.write('woman')
+                    fp.write(get_gender_type(one_info['gender'], int(one_info['age'])))
                     fp.write('\n')
                     fp.write(str(one_info['age']))
                     fp.write('\n')
+                    
+                    print('%s' % one_info['path'])
+                    print('%s, %s' % (one_info['gender'], int(one_info['age'])))
+            print('avg age : %s' % age)
         else:
             with open('log/insightface_%s.txt' % req_id, 'w') as fp:
                 fp.write(instance_dir)
                 fp.write('\n')
-                fp.write(gender)
+                fp.write(get_gender_type(gender, age_int))
                 fp.write('\n')
                 fp.write(age)
                 fp.write('\n')
